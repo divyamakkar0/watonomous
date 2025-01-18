@@ -3,7 +3,7 @@
 namespace robot
 {
 
-int MapMemoryCore:getLength(){
+int MapMemoryCore::getLength(){
     int length_ = (int) this->size_ / this->resolution;
     length_++; // make odd for (0,0)
     return length_;
