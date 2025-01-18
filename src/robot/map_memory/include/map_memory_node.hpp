@@ -11,9 +11,16 @@ class MapMemoryNode : public rclcpp::Node {
     MapMemoryNode();
 
     void readCostmap(const nav_msgs::msg::OccupancyGrid msg):
+    void publishMap(); 
     void readOdom(const nav_msgs::msg::Odometry msg);
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr costmap_readings;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_readings;
+    std::pair<float,float> pos; 
+    std::pair<float,float> last_pos;
+    float dt;
+    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr mapPub_;
+    rclcpp::TimerBase::SharedPtr timer_;
+
 
   private:
     robot::MapMemoryCore map_memory_;
