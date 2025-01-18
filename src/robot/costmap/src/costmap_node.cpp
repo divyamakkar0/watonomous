@@ -60,8 +60,6 @@ void CostmapNode::readData(const sensor_msgs::msg::LaserScan::SharedPtr msg)  {
   this->costmap_.Initalize();
 
   // robot angle in quaternion
-
-
   float q_x = std::get<0>(this->angle_);
   float q_y = std::get<1>(this->angle_);
   float q_z = std::get<2>(this->angle_);
@@ -145,7 +143,6 @@ void CostmapNode::readData(const sensor_msgs::msg::LaserScan::SharedPtr msg)  {
 void CostmapNode::readPosition(const nav_msgs::msg::Odometry::SharedPtr msg){
   float x = msg->pose.pose.position.x / this->costmap_.resolution;
   float y = msg->pose.pose.position.y / this->costmap_.resolution;
-
 
   float q_x = msg->pose.pose.orientation.x;
   float q_y = msg->pose.pose.orientation.y;
