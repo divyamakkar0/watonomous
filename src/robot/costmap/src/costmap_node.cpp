@@ -20,7 +20,7 @@ void CostmapNode::inflatePosition(const int xpos, const int ypos){
   // setup constants
   const int length = this->costmap_.getLength();
   const float res  = this->costmap_.resolution;
-  const int radius = (int) (this->inflate_distance / res);
+  const int radius = (int) ( this->inflate_distance / res);
 
   // get all the possible pairs in square grid
   std::vector<std::pair<int,int>> pairs;
@@ -32,6 +32,8 @@ void CostmapNode::inflatePosition(const int xpos, const int ypos){
       int y_2 = ypos - k;
 
       pairs.push_back(std::make_pair(x_1, y_1));
+      pairs.push_back(std::make_pair(x_1, y_2));
+      pairs.push_back(std::make_pair(x_2, y_1));
       pairs.push_back(std::make_pair(x_2, y_2));
     }
   }
@@ -58,43 +60,42 @@ void CostmapNode::readData(const sensor_msgs::msg::LaserScan::SharedPtr msg)  {
   this->costmap_.Initalize();
 
   // robot angle in quaternion
-  const float z = this->angle_.first;
-  const float w = this->angle_.second;
-  float r_ang = 2 * asin(z);
-  if(z == 0){
-    r_ang = 0;
-  }
-  if (z < 0){
-    r_ang *= -1;
-  }
+
+
+  float q_x = std::get<0>(this->angle_);
+  float q_y = std::get<1>(this->angle_);
+  float q_z = std::get<2>(this->angle_);
+  float q_w = std::get<3>(this->angle_);
+
+  // robot angle in euler
+  float r_ang = atan2(2 * (q_w * q_z + q_x * q_y), 1 - 2 * (q_y * q_y + q_z * q_z));
 
   const int length = this->costmap_.getLength();
+  const int l2 = length / 2;
   const float res = this->costmap_.resolution;
 
+  const int x = this->pos_.first;
+  const int y = this->pos_.second;
+
   for (int i = 0;i < (int) msg->ranges.size(); i++){
-    if (msg->ranges[i] < msg->range_max && msg->ranges[i] > msg->range_min){
+    float angle = msg->angle_min + i * msg->angle_increment;
+    float range = msg->ranges[i];
+    if (range > msg->range_min && range < msg->range_max){
 
-      float angle = (msg->angle_min + i * msg->angle_increment);
+      range /= res;
       float new_angle = angle + r_ang;
+      int x_grid = (int) (0.5 + x + range * cos(angle + r_ang));
+      int y_grid = (int) (0.5 + y + range * sin(angle + r_ang)) ;
 
-      if (new_angle < -PI){
-        new_angle += 2*PI;
-      } else if (new_angle > PI){
-        new_angle -= 2 * PI;
-      }
-
-      float xi = (msg->ranges[i] * cos(new_angle))/res;
-      float yi = (msg->ranges[i] * sin(new_angle))/res;
-
-      float l2 = length / 2;
-      int xpos = (int) (l2 + xi + this->pos_.first + 0.5);
-      int ypos = (int) (l2 - yi - this->pos_.second + 0.5);
+      int xpos = x_grid + l2;
+      int ypos = y_grid + l2;
 
       // RCLCPP_INFO(this->get_logger(), "\n info %f %f %f", r_ang, new_angle, l2);
-      // RCLCPP_INFO(this->get_logger(), "xi yi cal %f %f ", angle, msg->ranges[i]);
-      // RCLCPP_INFO(this->get_logger(), "Publishing xpos %f %f %d", xi, this->pos_.first, xpos);
-      // RCLCPP_INFO(this->get_logger(), "ypos %f %f %d \n", yi, this->pos_.second, ypos);
+      // RCLCPP_INFO(this->get_logger(), "angle and range %f %f ", angle, range);
+      // RCLCPP_INFO(this->get_logger(), " xpos %f %f %d", x_grid, x, xpos);
+      // RCLCPP_INFO(this->get_logger(), "ypos %f %f %d \n", y_grid, y, ypos);
 
+      // numerial errors
       if(xpos > l2 * 2){
         xpos = l2 * 2;
         RCLCPP_INFO(this->get_logger(), "xpos greater: %d", xpos);
@@ -120,11 +121,13 @@ void CostmapNode::readData(const sensor_msgs::msg::LaserScan::SharedPtr msg)  {
 
 
   nav_msgs::msg::OccupancyGrid message;
-  message.header.frame_id = "robot/costmap";
-  message.header.stamp = msg->header.stamp;
+  message.header = msg->header;
+  message.header.frame_id = "sim_world";
   message.info.resolution = this->costmap_.Info().first;
-  message.info.width = this->costmap_.Info().second;
-  message.info.height = this->costmap_.Info().second;
+  message.info.width = length;
+  message.info.height = length;
+  message.info.origin.position.x = -15;
+  message.info.origin.position.y = -15;
 
   std::vector<signed char> tmp(length * length);
 
@@ -142,11 +145,15 @@ void CostmapNode::readData(const sensor_msgs::msg::LaserScan::SharedPtr msg)  {
 void CostmapNode::readPosition(const nav_msgs::msg::Odometry::SharedPtr msg){
   float x = msg->pose.pose.position.x / this->costmap_.resolution;
   float y = msg->pose.pose.position.y / this->costmap_.resolution;
-  float z = msg->pose.pose.orientation.z;
-  float w = msg->pose.pose.orientation.w;
+
+
+  float q_x = msg->pose.pose.orientation.x;
+  float q_y = msg->pose.pose.orientation.y;
+  float q_z = msg->pose.pose.orientation.z;
+  float q_w = msg->pose.pose.orientation.w;
 
   this->pos_ = std::make_pair(x,y);
-  this->angle_=std::make_pair(z,w);
+  this->angle_ = std::make_tuple(q_x, q_y, q_z, q_w);
 
 }
 

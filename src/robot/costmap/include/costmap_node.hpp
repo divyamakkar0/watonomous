@@ -23,7 +23,7 @@ class CostmapNode : public rclcpp::Node {
     rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subscription_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr position_;
     std::pair<float,float> pos_;
-    std::pair<float,float> angle_;
+    std::tuple<float,float,float,float> angle_;
     float inflate_distance = 1.5;
 
 
