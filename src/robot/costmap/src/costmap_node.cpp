@@ -5,7 +5,7 @@
 #define PI  3.141590118408203
 using std::placeholders::_1;
 
-CostmapNode::CostmapNode() : Node("costmap"), costmap_(robot::CostmapCore(this->get_logger(), 0.1, 30)){
+CostmapNode::CostmapNode(float size, float res) : Node("costmap"), costmap_(robot::CostmapCore(this->get_logger(), res, size)){
   // Initialize the constructs and their parameters
   og_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/costmap", 10);
   subscription_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -159,8 +159,10 @@ void CostmapNode::readPosition(const nav_msgs::msg::Odometry::SharedPtr msg){
 
 int main(int argc, char ** argv)
 {
+  float size = 30;
+  float res = 0.1;
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<CostmapNode>());
+  rclcpp::spin(std::make_shared<CostmapNode>(size, res));
   rclcpp::shutdown();
   return 0;
 }
