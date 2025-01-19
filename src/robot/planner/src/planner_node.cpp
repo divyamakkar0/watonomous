@@ -122,7 +122,7 @@ void PlannerNode::publishPath(){
   CellIndex end = CellIndex(end_x, end_y);
   std::vector<std::vector<int>> scores(length, std::vector<int>(length, -1));
 
-  scores[start_y][start_x] = this->map[start_y][start_x] + (0.5 + sqrt(pow(start_x - end_x, 2) + pow(start_y - end_y, 2)));
+  scores[start_y][start_x] = this->map[start_y][start_x];
   open_set.push(AStarNode(start, scores[start_y][start_x]));
 
   RCLCPP_INFO(this->get_logger(), "Start: %f %f %d, %d", this->pos.first, this->pos.second, start_x, start_y);
@@ -152,12 +152,13 @@ void PlannerNode::publishPath(){
       if(c.x < 0 || c.x >= length || c.y < 0 || c.y >= length) continue;
       if(visited[c.y][c.x]) continue;
 
-      double tentative_g_score = scores[current.index.y][current.index.x] + this->map[c.y][c.x];
-      if(scores[c.y][c.x] == -1 || tentative_g_score < scores[c.y][c.x]){
+      double cost = scores[current.index.y][current.index.x] + sqrt(pow(c.x - current.index.x, 2) + pow(c.y - current.index.y, 2));
+
+      if(scores[c.y][c.x] == -1 || cost < scores[c.y][c.x]){
         parent[c.y][c.x] = current.index;
-        scores[c.y][c.x] = tentative_g_score;
-        double f_score = tentative_g_score + (0.5 + sqrt(pow(c.x - end.x, 2) + pow(c.y - end.y, 2)));
-        open_set.push(AStarNode(c, f_score));
+        scores[c.y][c.x] = cost + this->map[c.y][c.x];
+        double f = cost + sqrt(pow(c.x - end_x, 2) + pow(c.y - end_y, 2));
+        open_set.push(AStarNode(c, f));
       }
     }
   }
