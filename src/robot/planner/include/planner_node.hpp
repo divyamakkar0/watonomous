@@ -7,6 +7,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "planner_core.hpp"
+#include <queue>
 
 class PlannerNode : public rclcpp::Node {
   public:
@@ -17,13 +18,15 @@ class PlannerNode : public rclcpp::Node {
     void readOdom(const nav_msgs::msg::Odometry::SharedPtr msg);
     void publishPath();
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_readings;
-    rclcpp::Subscription<geometry_msgs::msg::PointStamped::SharedPtr>::SharedPtr goal_readings;
+    rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr goal_readings;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_readings;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPub_;
     rclcpp::TimerBase::SharedPtr timer_;
-    std::pair<float,float> goal_point;
-    std::pair<float,float> pos;
-    std::vector<vector<signed char>> map;
+    std::pair<float, float> goal_point;
+    std::pair<float, float> pos;
+    std::vector<std::vector<signed char>> map;
+    float r;
+    int l;
 
 
   private:

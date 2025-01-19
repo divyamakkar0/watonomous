@@ -42,7 +42,7 @@ struct AStarNode
 // Comparator for the priority queue (min-heap by f_score)
 struct CompareF
 {
-  bool operator()(const AStarNode &a, const AStarNode &b)
+  bool operator()(const AStarNode a, const AStarNode b)
   {
     // We want the node with the smallest f_score on top
     return a.f_score > b.f_score;
@@ -62,51 +62,156 @@ PlannerNode::PlannerNode() : Node("planner"), planner_(robot::PlannerCore(this->
   pathPub_ = this->create_publisher<nav_msgs::msg::Path>("/path", 10);
 
   timer_ = this->create_wall_timer(
-    std::chrono::milliseconds(500), std::bind(&MapMemoryNode::publishPath, this));
+    std::chrono::milliseconds(500), std::bind(&PlannerNode::publishPath, this)
+    );
+
+  this->r = -1;
+  this->l = -1;
+  this->goal_point = std::make_pair(-1,-1);
+
 }
-
-
 
 void PlannerNode::publishPath(){
 
-  // use a* to find path
-  std::vector<CellIndex> path = aStar();
-  CellIndex start = CellIndex((int)pos.first, (int)pos.second);
-  CellIndex end = CellIndex((int)goal_point.first, (int)goal_point.second);
+  if(this->r == -1 || this->l == -1 ){
+    return;
+  }
+  if(this->goal_point.first == -1 || this->goal_point.second == -1){
+    return;
+  }
 
+  int length = this->l;
+  float res = this->r;
+  float l2 = length/2;
+
+
+  int start_x = (int) l2 + (pos.first / res);
+  int start_y = (int) l2 + (pos.second / res);
+  if(start_x < 0){
+    start_x = 0;
+  } else if(start_x >= length){
+    start_x = length - 1;
+  }
+  if(start_y < 0){
+    start_y = 0;
+  } else if(start_y >= length){
+    start_y = length - 1;
+  }
+
+  int end_x = (int) l2 + (goal_point.first / res);
+  int end_y = (int) l2 + (goal_point.second / res);
+  if(end_x < 0){
+    end_x = 0;
+  } else if(end_x >= length){
+    end_x = length - 1;
+  }
+  if(end_y < 0){
+    end_y = 0;
+  } else if(end_y >= length){
+    end_y = length - 1;
+  }
+
+
+
+  std::vector<CellIndex> path;
+  std::vector<std::vector<bool>> visited(length, std::vector<bool>(length, false));
+  std::vector<std::vector<CellIndex>> parent(length, std::vector<CellIndex>(length, CellIndex(-1, -1)));
+  std::priority_queue<AStarNode, std::vector<AStarNode>, CompareF> open_set;
+
+  CellIndex start = CellIndex(start_x, start_y);
+  CellIndex end = CellIndex(end_x, end_y);
+  std::vector<std::vector<int>> scores(length, std::vector<int>(length, -1));
+
+  scores[start_y][start_x] = this->map[start_y][start_x] + (0.5 + sqrt(pow(start_x - end_x, 2) + pow(start_y - end_y, 2)));
+  open_set.push(AStarNode(start, scores[start_y][start_x]));
+
+  RCLCPP_INFO(this->get_logger(), "Start: %f %f %d, %d", this->pos.first, this->pos.second, start_x, start_y);
+  while(!open_set.empty()){
+
+    AStarNode current = open_set.top();
+    open_set.pop();
+    visited[current.index.y][current.index.x] = true;
+
+    if(current.index == end){
+      CellIndex current_index = current.index;
+      while(current_index != start){
+        path.push_back(current_index);
+        current_index = parent[current_index.y][current_index.x];
+      }
+      break;
+    }
+
+    std::vector<CellIndex> coords = {
+      CellIndex(current.index.x + 1, current.index.y),
+      CellIndex(current.index.x - 1, current.index.y),
+      CellIndex(current.index.x, current.index.y + 1),
+      CellIndex(current.index.x, current.index.y - 1)
+    };
+
+    for(auto c: coords){
+      if(c.x < 0 || c.x >= length || c.y < 0 || c.y >= length) continue;
+      if(visited[c.y][c.x]) continue;
+
+      double tentative_g_score = scores[current.index.y][current.index.x] + this->map[c.y][c.x];
+      if(scores[c.y][c.x] == -1 || tentative_g_score < scores[c.y][c.x]){
+        parent[c.y][c.x] = current.index;
+        scores[c.y][c.x] = tentative_g_score;
+        double f_score = tentative_g_score + (0.5 + sqrt(pow(c.x - end.x, 2) + pow(c.y - end.y, 2)));
+        open_set.push(AStarNode(c, f_score));
+      }
+    }
+  }
 
 
   nav_msgs::msg::Path path_msg;
-  for(auto ci: path){
-    geometry_msgs::msg::PoseStamped pose;
-    pose.pose.position.x = ci.x;
-    pose.pose.position.y = ci.y;
-
-    path_msg.poses.push_back(pose);
-  }
   path_msg.header.frame_id = "sim_world";
+  path_msg.header.stamp = this->now();
+
+  reverse(path.begin(), path.end());
+  for(CellIndex node: path){
+    geometry_msgs::msg::PoseStamped p;
+    p.header.frame_id = "sim_world";
+    p.pose.position.x = (node.x - l2) * res;
+    p.pose.position.y = (node.y - l2) * res;
+
+    path_msg.poses.push_back(p);
+  }
   pathPub_->publish(path_msg);
 }
 
 
 void PlannerNode::readMap(const nav_msgs::msg::OccupancyGrid::SharedPtr msg){
-  std::vector<signed char> map = msg->data;
-  int length = msg->info.width;
+  std::vector<signed char> map2 = msg->data;
+  this->l = msg->info.width;
+  this->r = msg->info.resolution;
+  int length = this->l;
+  std::vector<std::vector<signed char>> tmp(length, std::vector<signed char>(length, 0));
+
 
   for(int i = 0; i < length; i++){
     for(int k = 0; k < length; k++){
-      this->map[i][k] = map[i*length + k];
+      tmp[i][k]= map2[i*length + k];
     }
   }
+  this->map = tmp;
 
 }
 
 void PlannerNode::readGoal(const geometry_msgs::msg::PointStamped::SharedPtr msg){
-  this->goal_point = std::make_pair(msg->point.x, msg->point.y);
+
+  float x = msg->point.x;
+  float y = msg->point.y;
+
+  this->goal_point = std::make_pair(x, y);
 }
 
 void PlannerNode::readOdom(const nav_msgs::msg::Odometry::SharedPtr msg){
-  this->pos = std::make_pair(msg->pose.pose.position.x, msg->pose.pose.position.y);
+
+
+  float x = msg->pose.pose.position.x;
+  float y = msg->pose.pose.position.y;
+
+  this->pos = std::make_pair(x, y);
 }
 
 

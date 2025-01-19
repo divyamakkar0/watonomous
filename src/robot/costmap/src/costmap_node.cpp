@@ -96,18 +96,18 @@ void CostmapNode::readData(const sensor_msgs::msg::LaserScan::SharedPtr msg)  {
       // numerial errors
       if(xpos > l2 * 2){
         xpos = l2 * 2;
-        RCLCPP_INFO(this->get_logger(), "xpos greater: %d", xpos);
+        // RCLCPP_INFO(this->get_logger(), "xpos greater: %d", xpos);
       }
       if(xpos < 0){
         xpos = 0;
-        RCLCPP_INFO(this->get_logger(), "xpos less: %d", xpos);
+        // RCLCPP_INFO(this->get_logger(), "xpos less: %d", xpos);
       }
       if(ypos > l2 * 2){
-        RCLCPP_INFO(this->get_logger(), "ypos greeater: %d", ypos);
+        // RCLCPP_INFO(this->get_logger(), "ypos greeater: %d", ypos);
         ypos = l2 * 2;
       }
       if(ypos < 0){
-        RCLCPP_INFO(this->get_logger(), "ypos less %d", ypos);
+        // RCLCPP_INFO(this->get_logger(), "ypos less %d", ypos);
         ypos = 0;
       }
 
