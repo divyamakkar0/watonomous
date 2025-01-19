@@ -75,6 +75,17 @@ void PlannerNode::publishPath(){
   CellIndex end = CellIndex((int)goal_point.first, (int)goal_point.second);
 
 
+
+  nav_msgs::msg::Path path_msg;
+  for(auto ci: path){
+    geometry_msgs::msg::PoseStamped pose;
+    pose.pose.position.x = ci.x;
+    pose.pose.position.y = ci.y;
+
+    path_msg.poses.push_back(pose);
+  }
+  path_msg.header.frame_id = "sim_world";
+  pathPub_->publish(path_msg);
 }
 
 
