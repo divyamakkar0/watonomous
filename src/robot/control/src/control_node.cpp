@@ -58,8 +58,6 @@ void ControlNode::pathCallback(const nav_msgs::msg::Path::SharedPtr msg) {
 
 std::pair<float, float> ControlNode::findLookaheadPoint(){
 
-  // ref: https://wiki.purduesigbots.com/software/control-algorithms/basic-pure-pursuit
-
   float currentX = this->position.first;
   float currentY = this->position.second;
 
