@@ -58,7 +58,7 @@ PlannerNode::PlannerNode() : Node("planner"), planner_(robot::PlannerCore(this->
 
   odom_readings = this->create_subscription<nav_msgs::msg::Odometry>(
     "/odom/filtered", 10, std::bind(&PlannerNode::readOdom, this, _1));
-    
+
   pathPub_ = this->create_publisher<nav_msgs::msg::Path>("/path", 10);
 
   timer_ = this->create_wall_timer(
@@ -72,6 +72,7 @@ void PlannerNode::publishPath(){
   // use a* to find path
   std::vector<CellIndex> path = aStar();
   CellIndex start = CellIndex((int)pos.first, (int)pos.second);
+  CellIndex end = CellIndex((int)goal_point.first, (int)goal_point.second);
 
 
 }
@@ -97,7 +98,6 @@ void PlannerNode::readOdom(const nav_msgs::msg::Odometry::SharedPtr msg){
   this->pos = std::make_pair(msg->pose.pose.position.x, msg->pose.pose.position.y);
 }
 
-void
 
 int main(int argc, char ** argv)
 {
