@@ -13,6 +13,8 @@ endif()
 # Search for dependencies required for building this package
 find_package(ament_cmake REQUIRED) # ROS2 build tool
 find_package(rclcpp REQUIRED)      # ROS2 C++ package
+find_package(geometry_msgs REQUIRED) # ROS2 geometry messages
+find_package(nav_msgs REQUIRED)      # ROS2 tf2_ros package
 
 # Compiles source files into a library
 # A library is not executed, instead other executables can link
@@ -29,7 +31,10 @@ target_include_directories(control_lib
 # Add ROS2 dependencies required by package
 ament_target_dependencies(control_lib
   rclcpp
+  geometry_msgs
+  nav_msgs
 )
+
 
 # Create ROS2 node executable from source files
 add_executable(control_node src/control_node.cpp)
