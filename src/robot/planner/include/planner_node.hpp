@@ -17,16 +17,17 @@ class PlannerNode : public rclcpp::Node {
     void readOdom(const nav_msgs::msg::Odometry::SharedPtr msg);
     void publishPath();
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_readings;
-    rclcpp::Subscription<geometry_msgs::msg::PointStamped::SharedPtr>::SharedPtr goal_readings; 
+    rclcpp::Subscription<geometry_msgs::msg::PointStamped::SharedPtr>::SharedPtr goal_readings;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_readings;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pathPub_;
     rclcpp::TimerBase::SharedPtr timer_;
     std::pair<float,float> goal_point;
     std::pair<float,float> pos;
-    
+    std::vector<vector<signed char>> map;
+
 
   private:
     robot::PlannerCore planner_;
 };
 
-#endif 
+#endif
