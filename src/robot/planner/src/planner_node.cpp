@@ -153,7 +153,6 @@ void PlannerNode::publishPath(){
       if(visited[c.y][c.x]) continue;
 
       double cost = scores[current.index.y][current.index.x] + sqrt(pow(c.x - current.index.x, 2) + pow(c.y - current.index.y, 2));
-
       if(scores[c.y][c.x] == -1 || cost < scores[c.y][c.x]){
         parent[c.y][c.x] = current.index;
         scores[c.y][c.x] = cost + this->map[c.y][c.x];

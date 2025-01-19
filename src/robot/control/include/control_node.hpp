@@ -5,6 +5,7 @@
 #include "control_core.hpp"
 #include <nav_msgs/msg/path.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include "geometry_msgs/msg/point_stamped.hpp"
 #include <geometry_msgs/msg/twist.hpp>
 #include <cmath>
 #include <optional>
@@ -18,7 +19,7 @@ class ControlNode : public rclcpp::Node {
     // utility functions
     void controlLoop();
     std::pair<float, float> findLookaheadPoint();
-    void computeVelocity(std::pair<float, float> lookahead_point);
+    void computeVelocity(std::pair<float, float> lookahead_point, float distanceToGoal, float intialDistance);
     float computeDistance(std::pair<float, float> p1, std::pair<float, float> p2);
     void extractYaw();
 
@@ -41,7 +42,7 @@ class ControlNode : public rclcpp::Node {
 
     std::pair<float, float> position;
     std::tuple<float, float, float, float> angle;
-    std::vector<nav_msgs::msg::Path> path;
+    std::vector<geometry_msgs::msg::PoseStamped> path;
 
   private:
     robot::ControlCore control_;
